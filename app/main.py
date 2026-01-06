@@ -3,7 +3,6 @@ import sys
 def evaluateCommand(command: str):
 
     def exitCommand():
-        print("Exiting shell.")
         sys.exit(0)
 
     def commandNotFound(cmd):
