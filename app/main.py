@@ -1,5 +1,4 @@
 import sys
-
 def evaluateCommand(command: str):
 
     def exitCommand():
@@ -8,18 +7,41 @@ def evaluateCommand(command: str):
     def commandNotFound(cmd):
         print(f"{cmd}: command not found")
 
+    def echoCommand(msg=''):
+        print(*msg)
+
     commandDict = {
         "exit": exitCommand,
+        "echo": echoCommand,
+        "invalidCommand": commandNotFound
     }
 
     if not command: 
         return
 
-    if command not in commandDict:
-        commandNotFound(command)
+    return commandDict[command]
+
+def classifyCommandAndData(clientInput: str):
+    inputAsList = clientInput.split()
+    validCommands = ('exit', 'echo')
+
+    if len(inputAsList) < 1:
         return
 
-    commandDict[command]()
+    command, *arguments = inputAsList
+    
+    if command in validCommands:
+        if arguments:
+            evaluateCommand(command)(arguments)
+            return
+        else:
+            evaluateCommand(command)()
+            return
+    
+    else:
+        evaluateCommand("invalidCommand")(command)
+    
+
 
 def main():
     try:
@@ -27,7 +49,7 @@ def main():
             sys.stdout.write("$ ")
             sys.stdout.flush()
             user_input = sys.stdin.readline().strip()
-            evaluateCommand(user_input)
+            classifyCommandAndData(user_input)
 
     except KeyboardInterrupt:
         sys.exit(0)
