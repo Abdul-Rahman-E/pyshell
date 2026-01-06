@@ -31,7 +31,6 @@ def main():
             evaluateCommand(user_input)
 
     except KeyboardInterrupt:
-        print("\nExiting shell.")
         sys.exit(0)
 
 if __name__ == "__main__":
