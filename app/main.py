@@ -1,5 +1,17 @@
 import sys
-def evaluateCommand(command: str):
+import traceback
+
+def evaluateCommand(command: str, params=None):
+    if params is None:
+        params = []
+
+    if not command: 
+        return
+    
+    BUILTINS = ('echo', 'type', 'exit')
+
+    def checkValid(cmd) -> bool:
+        return cmd in BUILTINS
 
     def exitCommand():
         sys.exit(0)
@@ -8,51 +20,82 @@ def evaluateCommand(command: str):
         print(f"{cmd}: command not found")
 
     def echoCommand(msg=''):
-        print(*msg)
+        print(msg)
+
+    def typeCommand(cmd):
+        if checkValid(cmd):
+            print(f'{cmd} is a shell builtin')
+        else:
+            print(f'{cmd}: not found')
+
+    def handleMissingArgs(cmd, minArgs, maxArgs):
+        if minArgs == maxArgs:
+            print(f"{cmd} takes exactly {maxArgs} argument(s)")
+        else:
+            print(f"{cmd} takes {minArgs} to {maxArgs} arguments")
+
+
 
     commandDict = {
         "exit": exitCommand,
         "echo": echoCommand,
-        "invalidCommand": commandNotFound
+        "type": typeCommand,
+        "commandNotFound": commandNotFound
     }
 
-    if not command: 
-        return
+    if checkValid(command):
+        action = commandDict[command]
+        match command:
+            case "exit":
+                action()
+            case "echo":
+                if len(params) > 0:
+                    action(' '.join(params))
+                else:
+                    action()
+            case "type":
+                if len(params) == 1:
+                    action(params[0])
+                else:
+                    handleMissingArgs(command, 1, 1)
 
-    return commandDict[command]
+            case _:
+                action(command)
+
+
+    else:
+        commandDict["commandNotFound"](command)
 
 def classifyCommandAndData(clientInput: str):
     inputAsList = clientInput.split()
-    validCommands = ('exit', 'echo')
 
     if len(inputAsList) < 1:
         return
 
     command, *arguments = inputAsList
-    
-    if command in validCommands:
-        if arguments:
-            evaluateCommand(command)(arguments)
-            return
-        else:
-            evaluateCommand(command)()
-            return
-    
-    else:
-        evaluateCommand("invalidCommand")(command)
+
+    evaluateCommand(command, arguments)
     
 
 
 def main():
-    try:
-        while True:
+    while True:
+        try:
             sys.stdout.write("$ ")
             sys.stdout.flush()
             user_input = sys.stdin.readline().strip()
             classifyCommandAndData(user_input)
 
-    except KeyboardInterrupt:
-        sys.exit(0)
+        except KeyboardInterrupt:
+            print()
+            continue
+
+        except SystemExit:
+            raise
+
+        except Exception:
+            traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()
