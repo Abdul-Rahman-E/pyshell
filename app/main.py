@@ -1,3 +1,4 @@
+import os
 import sys
 import traceback
 
@@ -26,7 +27,17 @@ def evaluateCommand(command: str, params=None):
         if checkValid(cmd):
             print(f'{cmd} is a shell builtin')
         else:
-            print(f'{cmd}: not found')
+            pathAllStr = os.environ['PATH']
+            pathDir = pathAllStr.split(os.pathsep)
+            found = False
+            for p in pathDir:
+                createdPath = os.path.join(p, cmd)
+                if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
+                    print(f"{cmd} is {createdPath}")
+                    found = True
+                    break  
+            if not found:
+                print(f"{cmd}: not found")
 
     def handleMissingArgs(cmd, minArgs, maxArgs):
         if minArgs == maxArgs:
@@ -34,37 +45,22 @@ def evaluateCommand(command: str, params=None):
         else:
             print(f"{cmd} takes {minArgs} to {maxArgs} arguments")
 
+    match command:
+        case "exit":
+            exitCommand()
+        case "echo":
+            if len(params) > 0:
+                echoCommand(' '.join(params))
+            else:
+                echoCommand()
+        case "type":
+            if len(params) == 1:
+                typeCommand(params[0])
+            else:
+                handleMissingArgs(command, 1, 1)
 
-
-    commandDict = {
-        "exit": exitCommand,
-        "echo": echoCommand,
-        "type": typeCommand,
-        "commandNotFound": commandNotFound
-    }
-
-    if checkValid(command):
-        action = commandDict[command]
-        match command:
-            case "exit":
-                action()
-            case "echo":
-                if len(params) > 0:
-                    action(' '.join(params))
-                else:
-                    action()
-            case "type":
-                if len(params) == 1:
-                    action(params[0])
-                else:
-                    handleMissingArgs(command, 1, 1)
-
-            case _:
-                action(command)
-
-
-    else:
-        commandDict["commandNotFound"](command)
+        case _:
+            commandNotFound(command)
 
 def classifyCommandAndData(clientInput: str):
     inputAsList = clientInput.split()
@@ -87,8 +83,7 @@ def main():
             classifyCommandAndData(user_input)
 
         except KeyboardInterrupt:
-            print()
-            continue
+            sys.exit(0)
 
         except SystemExit:
             raise
