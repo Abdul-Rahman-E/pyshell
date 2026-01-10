@@ -55,11 +55,12 @@ def evaluateCommand(command: str, params=None):
             createdPath = os.path.join(p, cmd)
             if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
                 process = subprocess.Popen(
-                    args=[createdPath, *args],
-                    stdin=None,
-                    stdout=None,
-                    stderr=None
-                    )
+                args=[cmd, *args],      
+                executable=createdPath,
+                stdin=None,
+                stdout=None,
+                stderr=None
+            )
                 process.wait()
                 found = True
                 break  
