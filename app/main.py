@@ -1,6 +1,8 @@
 import os
 import sys
 import traceback
+import subprocess
+import shlex
 
 def evaluateCommand(command: str, params=None):
     if params is None:
@@ -45,6 +47,25 @@ def evaluateCommand(command: str, params=None):
         else:
             print(f"{cmd} takes {minArgs} to {maxArgs} arguments")
 
+    def executeCommand(cmd, *args):
+        pathAllStr = os.environ['PATH']
+        pathDir = pathAllStr.split(os.pathsep)
+        found = False
+        for p in pathDir:
+            createdPath = os.path.join(p, cmd)
+            if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
+                process = subprocess.Popen(
+                    args=[createdPath, *args],
+                    stdin=None,
+                    stdout=None,
+                    stderr=None
+                    )
+                process.wait()
+                found = True
+                break  
+        if not found:
+            commandNotFound(cmd)
+
     match command:
         case "exit":
             exitCommand()
@@ -58,12 +79,11 @@ def evaluateCommand(command: str, params=None):
                 typeCommand(params[0])
             else:
                 handleMissingArgs(command, 1, 1)
-
         case _:
-            commandNotFound(command)
+            executeCommand(command, *params)
 
 def classifyCommandAndData(clientInput: str):
-    inputAsList = clientInput.split()
+    inputAsList = shlex.split(clientInput)
 
     if len(inputAsList) < 1:
         return
@@ -72,8 +92,6 @@ def classifyCommandAndData(clientInput: str):
 
     evaluateCommand(command, arguments)
     
-
-
 def main():
     while True:
         try:
