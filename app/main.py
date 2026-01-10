@@ -76,11 +76,10 @@ def evaluateCommand(command: str, params=None):
             print("cd: too many arguments")
             return
 
-        path = params[0]
+        path = os.path.expanduser(params[0])
 
         try:
             os.chdir(path)
-
         except FileNotFoundError:
             print(f"cd: {path}: No such file or directory")
 
