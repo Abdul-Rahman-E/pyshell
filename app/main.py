@@ -11,10 +11,12 @@ def evaluateCommand(command: str, params=None):
     if not command: 
         return
     
-    BUILTINS = ('echo', 'type', 'exit')
+    BUILTINS = ('echo', 'type', 'exit', 'pwd')
 
     def checkValid(cmd) -> bool:
         return cmd in BUILTINS
+    
+    # Valid Commands
 
     def exitCommand():
         sys.exit(0)
@@ -41,12 +43,6 @@ def evaluateCommand(command: str, params=None):
             if not found:
                 print(f"{cmd}: not found")
 
-    def handleMissingArgs(cmd, minArgs, maxArgs):
-        if minArgs == maxArgs:
-            print(f"{cmd} takes exactly {maxArgs} argument(s)")
-        else:
-            print(f"{cmd} takes {minArgs} to {maxArgs} arguments")
-
     def executeCommand(cmd, *args):
         pathAllStr = os.environ['PATH']
         pathDir = pathAllStr.split(os.pathsep)
@@ -67,6 +63,19 @@ def evaluateCommand(command: str, params=None):
         if not found:
             commandNotFound(cmd)
 
+    def pwdCommand():
+        currentDir = os.getcwd()
+        print(currentDir)
+
+    # Handlers
+
+    def handleMissingArgs(cmd, minArgs, maxArgs):
+        if minArgs == maxArgs:
+            print(f"{cmd} takes exactly {maxArgs} argument(s)")
+        else:
+            print(f"{cmd} takes {minArgs} to {maxArgs} arguments")
+
+
     match command:
         case "exit":
             exitCommand()
@@ -80,6 +89,8 @@ def evaluateCommand(command: str, params=None):
                 typeCommand(params[0])
             else:
                 handleMissingArgs(command, 1, 1)
+        case "pwd":
+            pwdCommand()
         case _:
             executeCommand(command, *params)
 
