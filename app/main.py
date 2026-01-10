@@ -11,7 +11,7 @@ def evaluateCommand(command: str, params=None):
     if not command: 
         return
     
-    BUILTINS = ('echo', 'type', 'exit', 'pwd')
+    BUILTINS = ('echo', 'type', 'exit', 'pwd', 'cd')
 
     def checkValid(cmd) -> bool:
         return cmd in BUILTINS
@@ -67,6 +67,32 @@ def evaluateCommand(command: str, params=None):
         currentDir = os.getcwd()
         print(currentDir)
 
+    def cdCommand(params):
+        if len(params) == 0:
+            print("cd: missing path")
+            return
+
+        if len(params) > 1:
+            print("cd: too many arguments")
+            return
+
+        path = params[0]
+
+        try:
+            os.chdir(path)
+
+        except FileNotFoundError:
+            print(f"cd: {path}: No such file or directory")
+
+        except NotADirectoryError:
+            print(f"cd: {path}: Not a directory")
+
+        except PermissionError:
+            print(f"cd: {path}: Permission denied")
+
+        except OSError as e:
+            print(f"cd: {path}: {e.strerror}")
+
     # Handlers
 
     def handleMissingArgs(cmd, minArgs, maxArgs):
@@ -91,6 +117,8 @@ def evaluateCommand(command: str, params=None):
                 handleMissingArgs(command, 1, 1)
         case "pwd":
             pwdCommand()
+        case "cd":
+            cdCommand(params)
         case _:
             executeCommand(command, *params)
 
