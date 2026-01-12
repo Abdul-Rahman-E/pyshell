@@ -171,7 +171,13 @@ def classifyCommandAndData(clientInput: str):
     stdout_flag = None
 
     # IMPORTANT: most specific first
-    if '>>' in tokens:
+    if '1>>' in tokens:
+        idx = tokens.index('1>>')
+        stdout_file = tokens[idx + 1]
+        tokens = tokens[:idx]
+        stdout_flag = 'a'
+
+    elif '>>' in tokens:
         idx = tokens.index('>>')
         stdout_file = tokens[idx + 1]
         tokens = tokens[:idx]
