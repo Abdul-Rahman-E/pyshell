@@ -192,8 +192,6 @@ def classifyCommandAndData(clientInput: str):
         command = inputAsList[0]
         arguments = inputAsList[1:]
 
-    command, *arguments = inputAsList
-
     evaluateCommand(command, arguments, stdout_file=stdout_file)
     
 def main():
