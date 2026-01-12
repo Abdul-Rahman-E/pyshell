@@ -11,8 +11,6 @@ def evaluateCommand(command: str, params=None, stdout_file=None):
     if not command: 
         return
     
-    print(command, params)
-    
     BUILTINS = ('echo', 'type', 'exit', 'pwd', 'cd')
 
     def checkValid(cmd) -> bool:
