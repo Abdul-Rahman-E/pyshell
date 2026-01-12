@@ -4,7 +4,7 @@ import traceback
 import subprocess
 import shlex
 
-def evaluateCommand(command: str, params=None, stdout_file=None):
+def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=sys.stderr):
     if params is None:
         params = []
 
@@ -20,7 +20,14 @@ def evaluateCommand(command: str, params=None, stdout_file=None):
         try:
             return open(stdout_file, 'w')
         except FileNotFoundError:
-            print(f"{stdout_file}: No such file or directory", file=sys.stderr)
+            print(f"{stdout_file}: No such file or directory", file=stderr_file)
+            return None
+        
+    def open_stderr_file():
+        try:
+            return open(stderr_file, 'w')
+        except FileNotFoundError:
+            print(f"{stderr_file}: No such file or directory", file=sys.stderr)
             return None
 
     
@@ -44,28 +51,37 @@ def evaluateCommand(command: str, params=None, stdout_file=None):
 
 
     def typeCommand(cmd):
-        output = ""
-        if checkValid(cmd):
-            output = f'{cmd} is a shell builtin'
-        else:
-            found = False
-            for p in os.environ['PATH'].split(os.pathsep):
-                createdPath = os.path.join(p, cmd)
-                if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
-                    output = f"{cmd} is {createdPath}"
-                    found = True
-                    break
-            if not found:
-                output = f"{cmd}: not found"
+    output = ""
+    is_error = False
 
-        if stdout_file:
-            f = open_stdout_file()
-            if not f:
-                return
-            print(output, file=f)
-            f.close()
-        else:
-            print(output)
+    if checkValid(cmd):
+        output = f'{cmd} is a shell builtin'
+    else:
+        found = False
+        for p in os.environ['PATH'].split(os.pathsep):
+            createdPath = os.path.join(p, cmd)
+            if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
+                output = f"{cmd} is {createdPath}"
+                found = True
+                break
+        if not found:
+            output = f"{cmd}: not found"
+            is_error = True
+
+    target = sys.stderr if is_error else sys.stdout
+    if stderr_file and is_error:
+        target = open_stderr_file()
+        if not target:
+            return
+    elif stdout_file and not is_error:
+        target = open_stdout_file()
+        if not target:
+            return
+
+    print(output, file=target)
+
+    if target not in (sys.stdout, sys.stderr):
+        target.close()
 
 
     def executeCommand(cmd, *args):
@@ -73,21 +89,31 @@ def evaluateCommand(command: str, params=None, stdout_file=None):
             createdPath = os.path.join(p, cmd)
             if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
                 f = None
+                err = None
                 if stdout_file:
                     f = open_stdout_file()
                     if not f:
+                        return
+                
+                if stderr_file:
+                    err = open_stderr_file()
+                    if not err:
                         return
 
                 process = subprocess.Popen(
                     [cmd, *args],
                     executable=createdPath,
                     stdout=f if f else None,
-                    stderr=sys.stderr
+                    stderr=err if err else sys.stderr
                 )
                 process.wait()
 
                 if f:
                     f.close()
+
+                if err:
+                    err.close()
+
                 return
 
         commandNotFound(cmd)
@@ -169,6 +195,7 @@ def classifyCommandAndData(clientInput: str):
         return
     
     stdout_file = None
+    stderr_file = None
 
     if '>' in inputAsList:
         idx = inputAsList.index('>')
@@ -188,11 +215,20 @@ def classifyCommandAndData(clientInput: str):
         else:
             print("Syntax error: no file specified for redirection")
             return
+    elif '2>' in inputAsList:
+        idx = inputAsList.index('2>')
+        command = inputAsList[0]
+        arguments = inputAsList[1:idx]
+        if idx + 1 < len(inputAsList):
+            stderr_file = inputAsList[idx + 1]
+        else:
+            print("Syntax error: no file specified for redirection")
+            return
     else:
         command = inputAsList[0]
         arguments = inputAsList[1:]
 
-    evaluateCommand(command, arguments, stdout_file=stdout_file)
+    evaluateCommand(command, arguments, stdout_file=stdout_file, stderr_file=stderr_file)
     
 def main():
     while True:
