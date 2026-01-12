@@ -51,37 +51,37 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=sys
 
 
     def typeCommand(cmd):
-    output = ""
-    is_error = False
+        output = ""
+        is_error = False
 
-    if checkValid(cmd):
-        output = f'{cmd} is a shell builtin'
-    else:
-        found = False
-        for p in os.environ['PATH'].split(os.pathsep):
-            createdPath = os.path.join(p, cmd)
-            if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
-                output = f"{cmd} is {createdPath}"
-                found = True
-                break
-        if not found:
-            output = f"{cmd}: not found"
-            is_error = True
+        if checkValid(cmd):
+            output = f'{cmd} is a shell builtin'
+        else:
+            found = False
+            for p in os.environ['PATH'].split(os.pathsep):
+                createdPath = os.path.join(p, cmd)
+                if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
+                    output = f"{cmd} is {createdPath}"
+                    found = True
+                    break
+            if not found:
+                output = f"{cmd}: not found"
+                is_error = True
 
-    target = sys.stderr if is_error else sys.stdout
-    if stderr_file and is_error:
-        target = open_stderr_file()
-        if not target:
-            return
-    elif stdout_file and not is_error:
-        target = open_stdout_file()
-        if not target:
-            return
+        target = sys.stderr if is_error else sys.stdout
+        if stderr_file and is_error:
+            target = open_stderr_file()
+            if not target:
+                return
+        elif stdout_file and not is_error:
+            target = open_stdout_file()
+            if not target:
+                return
 
-    print(output, file=target)
+        print(output, file=target)
 
-    if target not in (sys.stdout, sys.stderr):
-        target.close()
+        if target not in (sys.stdout, sys.stderr):
+            target.close()
 
 
     def executeCommand(cmd, *args):
