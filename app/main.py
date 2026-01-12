@@ -5,7 +5,7 @@ import subprocess
 import shlex
 
 
-def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=None, stdout_flag=None):
+def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=None, stdout_flag=None, stderr_flag=None):
 
     if params is None:
         params = []
@@ -13,11 +13,12 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
     if not command:
         return
 
-    # --- prepare stderr redirection (must happen BEFORE execution) ---
     stderr_handle = None
     if stderr_file:
         try:
-            stderr_handle = open(stderr_file, 'w')
+            if not stderr_flag:
+                stderr_flag = 'w'
+            stderr_handle = open(stderr_file, stderr_flag)
         except FileNotFoundError:
             print(f"{stderr_file}: No such file or directory", file=sys.stderr)
             return
@@ -169,41 +170,54 @@ def classifyCommandAndData(clientInput: str):
     stdout_file = None
     stderr_file = None
     stdout_flag = None
+    stderr_flag = None
 
-    # IMPORTANT: most specific first
+    # stdout append
     if '1>>' in tokens:
         idx = tokens.index('1>>')
         stdout_file = tokens[idx + 1]
-        tokens = tokens[:idx]
         stdout_flag = 'a'
+        tokens = tokens[:idx]
 
     elif '>>' in tokens:
         idx = tokens.index('>>')
         stdout_file = tokens[idx + 1]
-        tokens = tokens[:idx]
         stdout_flag = 'a'
+        tokens = tokens[:idx]
 
-    if '2>' in tokens:
+    # stderr append
+    if '2>>' in tokens:
+        idx = tokens.index('2>>')
+        stderr_file = tokens[idx + 1]
+        stderr_flag = 'a'
+        tokens = tokens[:idx]
+
+    # stderr overwrite
+    elif '2>' in tokens:
         idx = tokens.index('2>')
         stderr_file = tokens[idx + 1]
+        stderr_flag = 'w'
         tokens = tokens[:idx]
 
+    # stdout overwrite
     if '1>' in tokens:
         idx = tokens.index('1>')
         stdout_file = tokens[idx + 1]
-        tokens = tokens[:idx]
         stdout_flag = 'w'
+        tokens = tokens[:idx]
 
     elif '>' in tokens:
         idx = tokens.index('>')
         stdout_file = tokens[idx + 1]
-        tokens = tokens[:idx]
         stdout_flag = 'w'
+        tokens = tokens[:idx]
+
 
     command = tokens[0]
     arguments = tokens[1:]
 
-    evaluateCommand(command, arguments, stdout_file=stdout_file, stderr_file=stderr_file, stdout_flag=stdout_flag)
+    evaluateCommand(command, arguments, stdout_file=stdout_file, stderr_file=stderr_file, stdout_flag=stdout_flag,
+    stderr_flag=stderr_flag)
 
 
 def main():
