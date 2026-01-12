@@ -4,17 +4,27 @@ import traceback
 import subprocess
 import shlex
 
-def evaluateCommand(command: str, params=None):
+def evaluateCommand(command: str, params=None, stdout_file=None):
     if params is None:
         params = []
 
     if not command: 
         return
     
+    print(command, params)
+    
     BUILTINS = ('echo', 'type', 'exit', 'pwd', 'cd')
 
     def checkValid(cmd) -> bool:
         return cmd in BUILTINS
+    
+    def open_stdout_file():
+        try:
+            return open(stdout_file, 'w')
+        except FileNotFoundError:
+            print(f"{stdout_file}: No such file or directory", file=sys.stderr)
+            return None
+
     
     # Valid Commands
 
@@ -25,47 +35,77 @@ def evaluateCommand(command: str, params=None):
         print(f"{cmd}: command not found")
 
     def echoCommand(msg=''):
-        print(msg)
+        if stdout_file:
+            f = open_stdout_file()
+            if not f:
+                return
+            print(msg, file=f)
+            f.close()
+        else:
+            print(msg)
+
 
     def typeCommand(cmd):
+        output = ""
         if checkValid(cmd):
-            print(f'{cmd} is a shell builtin')
+            output = f'{cmd} is a shell builtin'
         else:
-            pathAllStr = os.environ['PATH']
-            pathDir = pathAllStr.split(os.pathsep)
             found = False
-            for p in pathDir:
+            for p in os.environ['PATH'].split(os.pathsep):
                 createdPath = os.path.join(p, cmd)
                 if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
-                    print(f"{cmd} is {createdPath}")
+                    output = f"{cmd} is {createdPath}"
                     found = True
-                    break  
+                    break
             if not found:
-                print(f"{cmd}: not found")
+                output = f"{cmd}: not found"
+
+        if stdout_file:
+            f = open_stdout_file()
+            if not f:
+                return
+            print(output, file=f)
+            f.close()
+        else:
+            print(output)
+
 
     def executeCommand(cmd, *args):
-        pathAllStr = os.environ['PATH']
-        pathDir = pathAllStr.split(os.pathsep)
-        found = False
-        for p in pathDir:
+        for p in os.environ['PATH'].split(os.pathsep):
             createdPath = os.path.join(p, cmd)
             if os.path.isfile(createdPath) and os.access(createdPath, os.X_OK):
+                f = None
+                if stdout_file:
+                    f = open_stdout_file()
+                    if not f:
+                        return
+
                 process = subprocess.Popen(
-                args=[cmd, *args],      
-                executable=createdPath,
-                stdin=None,
-                stdout=None,
-                stderr=None
-            )
+                    [cmd, *args],
+                    executable=createdPath,
+                    stdout=f if f else None,
+                    stderr=sys.stderr
+                )
                 process.wait()
-                found = True
-                break  
-        if not found:
-            commandNotFound(cmd)
+
+                if f:
+                    f.close()
+                return
+
+        commandNotFound(cmd)
+
 
     def pwdCommand():
-        currentDir = os.getcwd()
-        print(currentDir)
+        output = os.getcwd()
+        if stdout_file:
+            f = open_stdout_file()
+            if not f:
+                return
+            print(output, file=f)
+            f.close()
+        else:
+            print(output)
+
 
     def cdCommand(params):
         if len(params) == 0:
@@ -122,14 +162,41 @@ def evaluateCommand(command: str, params=None):
             executeCommand(command, *params)
 
 def classifyCommandAndData(clientInput: str):
+    if not clientInput.strip():
+        return
+    
     inputAsList = shlex.split(clientInput)
 
-    if len(inputAsList) < 1:
+    if not inputAsList:
         return
+    
+    stdout_file = None
+
+    if '>' in inputAsList:
+        idx = inputAsList.index('>')
+        command = inputAsList[0]
+        arguments = inputAsList[1:idx]
+        if idx+1 < len(inputAsList):
+            stdout_file = inputAsList[idx+1]
+        else:
+            print("Syntax error: no file specified for redirection")
+            return
+    elif '1>' in inputAsList:
+        idx = inputAsList.index('1>')
+        command = inputAsList[0]
+        arguments = inputAsList[1:idx]
+        if idx + 1 < len(inputAsList):
+            stdout_file = inputAsList[idx + 1]
+        else:
+            print("Syntax error: no file specified for redirection")
+            return
+    else:
+        command = inputAsList[0]
+        arguments = inputAsList[1:]
 
     command, *arguments = inputAsList
 
-    evaluateCommand(command, arguments)
+    evaluateCommand(command, arguments, stdout_file=stdout_file)
     
 def main():
     while True:
