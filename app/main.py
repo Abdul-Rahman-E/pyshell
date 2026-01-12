@@ -52,33 +52,33 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
             print(msg)
 
     def typeCommand(cmd):
-    output = None
-    is_error = False
+        output = None
+        is_error = False
 
-    if cmd in BUILTINS:
-        output = f"{cmd} is a shell builtin"
-    else:
-        for p in os.environ['PATH'].split(os.pathsep):
-            full = os.path.join(p, cmd)
-            if os.path.isfile(full) and os.access(full, os.X_OK):
-                output = f"{cmd} is {full}"
-                break
+        if cmd in BUILTINS:
+            output = f"{cmd} is a shell builtin"
         else:
-            output = f"{cmd}: not found"
-            is_error = True
+            for p in os.environ['PATH'].split(os.pathsep):
+                full = os.path.join(p, cmd)
+                if os.path.isfile(full) and os.access(full, os.X_OK):
+                    output = f"{cmd} is {full}"
+                    break
+            else:
+                output = f"{cmd}: not found"
+                is_error = True
 
-    if is_error:
-        print(output, file=stderr_handle or sys.stderr)
-        return
-
-    if stdout_file:
-        f = open_stdout_file(stdout_flag)
-        if not f:
+        if is_error:
+            print(output, file=stderr_handle or sys.stderr)
             return
-        print(output, file=f)
-        f.close()
-    else:
-        print(output)
+
+        if stdout_file:
+            f = open_stdout_file(stdout_flag)
+            if not f:
+                return
+            print(output, file=f)
+            f.close()
+        else:
+            print(output)
 
 
     def pwdCommand():
