@@ -1,34 +1,104 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/8a2da1e5-2039-4f2c-9858-59e1b9a0f823)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+````markdown
+# PyShell – Custom Python Shell
 
-This is a starting point for Python solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+**PyShell** is a fully functional, Python-based command-line shell that emulates core Unix/Linux shell functionality. It is designed for learning, experimentation, and demonstrating systems programming concepts in Python.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+---
 
-# Passing the first stage
+## Features
 
-The entry point for your `shell` implementation is in `app/main.py`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+- **Built-in commands**:
+  - `cd` – change directories
+  - `pwd` – display current directory
+  - `echo` – print messages
+  - `type` – show command type or path
+  - `exit` – terminate the shell
+- **External command execution**:
+  - Execute system commands using Python’s `subprocess` module
+  - Full support for PATH resolution and error handling
+- **Advanced I/O redirection**:
+  - Redirect stdout and stderr to files
+  - Support for `>`, `>>`, `1>`, `1>>`, `2>`, `2>>`
+- **Dynamic command parsing**:
+  - Uses `shlex` to handle quoted arguments safely
+- **Interactive shell prompt**:
+  - Mimics real shell behavior with `$` prompt
+- **Robust error handling**:
+  - Gracefully handles invalid commands, missing files, and exceptions
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/your-username/pyshell.git
+cd pyshell
+```
+````
+
+Run the shell:
+
+```bash
+python pyshell.py
 ```
 
-Time to move on to the next stage!
+---
 
-# Stage 2 & beyond
+## Usage
 
-Note: This section is for stages 2 and beyond.
+```bash
+$ echo Hello World
+Hello World
 
-1. Ensure you have `uv` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.py`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+$ pwd
+/home/user
+
+$ cd /tmp
+$ pwd
+/tmp
+
+$ ls -l
+total 0
+-rw-r--r-- 1 user user 0 Jan 12 10:00 file.txt
+
+$ echo "This is a test" > output.txt
+$ type ls
+ls is /bin/ls
+
+$ exit
+```
+
+**Supports stdout and stderr redirection:**
+
+```bash
+$ echo "Hello" >> output.txt
+$ ls non_existent_file 2> errors.txt
+```
+
+---
+
+## Technical Highlights
+
+- Implemented in **Python 3** using:
+
+  - `os` – for directory and environment management
+  - `subprocess` – for executing external commands
+  - `shlex` – for parsing complex commands
+
+- Demonstrates:
+
+  - Systems programming concepts
+  - Command parsing and dispatch
+  - Process and file descriptor management
+
+- Modular design allows easy extension of built-in commands and features
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
