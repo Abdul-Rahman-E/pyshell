@@ -5,7 +5,8 @@ import subprocess
 import shlex
 
 
-def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=None):
+def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=None, stdout_flag=None):
+
     if params is None:
         params = []
 
@@ -23,9 +24,9 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
 
     BUILTINS = ('echo', 'type', 'exit', 'pwd', 'cd')
 
-    def open_stdout_file():
+    def open_stdout_file(flag: str):
         try:
-            return open(stdout_file, 'w')
+            return open(stdout_file, flag)
         except FileNotFoundError:
             print(f"{stdout_file}: No such file or directory", file=sys.stderr)
             return None
@@ -42,7 +43,7 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
 
     def echoCommand(msg=''):
         if stdout_file:
-            f = open_stdout_file()
+            f = open_stdout_file(stdout_flag)
             if not f:
                 return
             print(msg, file=f)
@@ -51,22 +52,39 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
             print(msg)
 
     def typeCommand(cmd):
-        if cmd in BUILTINS:
-            print(f"{cmd} is a shell builtin")
-            return
+    output = None
+    is_error = False
 
+    if cmd in BUILTINS:
+        output = f"{cmd} is a shell builtin"
+    else:
         for p in os.environ['PATH'].split(os.pathsep):
             full = os.path.join(p, cmd)
             if os.path.isfile(full) and os.access(full, os.X_OK):
-                print(f"{cmd} is {full}")
-                return
+                output = f"{cmd} is {full}"
+                break
+        else:
+            output = f"{cmd}: not found"
+            is_error = True
 
-        print(f"{cmd}: not found", file=stderr_handle or sys.stderr)
+    if is_error:
+        print(output, file=stderr_handle or sys.stderr)
+        return
+
+    if stdout_file:
+        f = open_stdout_file(stdout_flag)
+        if not f:
+            return
+        print(output, file=f)
+        f.close()
+    else:
+        print(output)
+
 
     def pwdCommand():
         output = os.getcwd()
         if stdout_file:
-            f = open_stdout_file()
+            f = open_stdout_file(stdout_flag)
             if not f:
                 return
             print(output, file=f)
@@ -99,7 +117,7 @@ def evaluateCommand(command: str, params=None, stdout_file=None, stderr_file=Non
             if os.path.isfile(full) and os.access(full, os.X_OK):
                 out = None
                 if stdout_file:
-                    out = open_stdout_file()
+                    out = open_stdout_file(stdout_flag)
                     if not out:
                         return
 
@@ -150,8 +168,15 @@ def classifyCommandAndData(clientInput: str):
 
     stdout_file = None
     stderr_file = None
+    stdout_flag = None
 
     # IMPORTANT: most specific first
+    if '>>' in tokens:
+        idx = tokens.index('>>')
+        stdout_file = tokens[idx + 1]
+        tokens = tokens[:idx]
+        stdout_flag = 'a'
+
     if '2>' in tokens:
         idx = tokens.index('2>')
         stderr_file = tokens[idx + 1]
@@ -161,16 +186,18 @@ def classifyCommandAndData(clientInput: str):
         idx = tokens.index('1>')
         stdout_file = tokens[idx + 1]
         tokens = tokens[:idx]
+        stdout_flag = 'w'
 
     elif '>' in tokens:
         idx = tokens.index('>')
         stdout_file = tokens[idx + 1]
         tokens = tokens[:idx]
+        stdout_flag = 'w'
 
     command = tokens[0]
     arguments = tokens[1:]
 
-    evaluateCommand(command, arguments, stdout_file=stdout_file, stderr_file=stderr_file)
+    evaluateCommand(command, arguments, stdout_file=stdout_file, stderr_file=stderr_file, stdout_flag=stdout_flag)
 
 
 def main():
