@@ -1,4 +1,3 @@
-````markdown
 # PyShell – Custom Python Shell
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
